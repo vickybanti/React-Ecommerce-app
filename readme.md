@@ -1,0 +1,6 @@
+# moore
+
+run:
+```
+npx moore
+```
