@@ -3,11 +3,11 @@ module.exports = function(req, res, next) {
 
     function validEmail(email) {
         //learn reg x for email validation
-        return /^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9]+(\.[a-z]{2,4})$/;
+        return /^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9]+(\.[a-z]{2,4})$/.test(email);
     }
 
     if(req.path === "/register") {
-        if(![email, password, firstname, lastname,address].every(Boolean))
+        if(![email, password].every(Boolean))
         return res.status(401).send("Missing credentials");
 
     }else if(req.path === "/login") {

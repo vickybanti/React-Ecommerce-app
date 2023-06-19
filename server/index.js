@@ -10,6 +10,7 @@ const pool = require("./db");
 app.use(cors());
 app.use(express.json());
 //register and login routes
+app.set('view engine', "ejs");
 app.use("/auth", require("./routes/jwAuth"));
 
 //login routes
@@ -21,18 +22,22 @@ app.use("/dashboard", require("./routes/dashboard"));
 app.use("/cart", require("./routes/cart"))
 
 app.use("/order", require("./routes/order"))
+app.use("/create-checkout-session", require("./routes/stripe"))
 
-//ROUTES//
-app.get("/user/:firstname", async (req, res) => {
-    const {firstname} = req.params
+
+app.get("/search", async(req, res)=>{
     try {
-        const name = await pool.query(`SELECT firstname FROM users WHERE firstname=${firstname}`)
-        res.json(name.rows[0])
-        
-    } catch (err) {
-        console.error(err.message)
+        //product_title, cat_title
+        const {title} = req.query;
+        const product_search = await pool.query(` SELECT * FROM products WHERE title ILIKE '%${title}%' `);
+        res.json(product_search.rows);
+    } catch (error) {
+        console.error(error.message)
     }
 })
+
+
+//ROUTES//
 
 //create a product
 
@@ -61,12 +66,24 @@ app.get("/product/:id", async (req, res) => {
     }
 })
 
+app.delete("/product/delete/:id", async (req, res) => {
+    try{
+        const { id } = req.params;
+        
+        const product = await pool.query(`DELETE FROM products WHERE id = ${id}`)
+        res.json(product.rows);
+    } catch (err) {
+        console.error(err.message);
+        res.status(400).send(err.message);
+    }
+})
+
   
 // get the new arrivals of product
 
 app.get("/newproducts", async (req,res) => {
     try {
-        const allProducts = await pool.query(`SELECT * FROM products WHERE type='newArrivals' LIMIT 5`);
+        const allProducts = await pool.query(`SELECT * FROM products WHERE type='newArrivals'`);
         res.json(allProducts.rows);
     } catch (err) {
         console.log(err.message);
@@ -90,7 +107,7 @@ app.get("/type", async (req, res) => {
 
 app.get("/trending", async (req,res) => {
     try {
-        const allProducts = await pool.query(`SELECT * FROM products WHERE type='trending' LIMIT 5`);
+        const allProducts = await pool.query(`SELECT * FROM products WHERE type='trending'`);
         res.json(allProducts.rows);
     } catch (err) {
         console.log(err.message);
@@ -140,6 +157,20 @@ app.get("/categories/:id", async (req, res) => {
     }
 })
 
+app.get("/browseCategories/:title", async (req, res) => {
+    try{
+        const {title} = req.params;
+        console.log(title)
+        const catPro = await pool.query(`SELECT * FROM products 
+        WHERE title ILIKE'%${title}%'`);
+        res.json(catPro.rows);        
+    } catch (err) {
+        console.log(err.message);
+        res.status(400).send(err.message);
+
+    }
+})
+
 app.get("/search/:title", async(req, res) => {
     try {
         const { title } = req.query;
@@ -153,6 +184,21 @@ app.get("/search/:title", async(req, res) => {
         console.error(err.message);        
     }
 }  )
+
+
+app.get("/products/:id", async(req, res) => {
+    const {id} = req.params
+    try {
+        const cat = await pool.query(`SELECT cat_id FROM products WHERE id = ${id}`);
+        const getCat = cat.rows[0].cat_id
+        if(getCat){
+            const product = await pool.query(`SELECT * FROM products WHERE cat_id = '${getCat}'`)
+            res.json(product.rows)
+        }
+    } catch (err) {
+        console.error(err.message)
+    }
+})
 
 
 
